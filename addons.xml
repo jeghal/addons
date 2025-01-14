@@ -1,19 +1,13 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <addons>
-  <addon id="plugin.video.xtream_codes_iptv" version="1.0.0" name="Xtream Codes IPTV Plugin" provider-name="YourName">
-      <requires>
-          <import addon="xbmc.python" version="3.0.1" />
-      </requires>
-      <extension point="xbmc.python.pluginsource" library="addon.py">
-          <provides>video</provides>
-      </extension>
-      <extension point="xbmc.addon.metadata">
-          <summary lang="en_GB">Xtream Codes IPTV Plugin</summary>
-          <description lang="en_GB">An advanced IPTV plugin for Kodi using Xtream Codes API. Access Live TV, VOD, and Series with rich metadata and advanced features.</description>
-          <assets>
-              <icon>resources/images/icon.png</icon>
-              <fanart>resources/images/fanart.jpg</fanart>
-          </assets>
-      </extension>
-  </addon>
+    <addon id="plugin.video.xtream_codes_iptv" version="1.0.0" name="Xtream Codes IPTV" provider-name="Votre Nom">
+        <extension point="xbmc.python.pluginsource" library="default.py" />
+        <requires>
+            <import addon="xbmc.python" version="2.25.0" />
+        </requires>
+        <summary>Extension Kodi pour Xtream Codes IPTV</summary>
+        <description>Cette extension permet d'accéder aux flux IPTV via Xtream Codes.</description>
+        <assets>
+            <icon>icon.png</icon>
+        </assets>
+    </addon>
 </addons>

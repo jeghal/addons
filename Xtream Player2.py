@@ -14,7 +14,7 @@ import time
 import subprocess
 import re
 from dataclasses import dataclass, asdict
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Set
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
@@ -177,6 +177,8 @@ class DownloadItem:
     file_size: int = 0
     downloaded: int = 0
     subtitle_url: str = ""
+    pause_requested: bool = False
+    cancel_requested: bool = False
 
 @dataclass
 class SubtitleTrack:
@@ -507,72 +509,200 @@ class DownloadManager(QThread):
     progress_updated = pyqtSignal(DownloadItem)
     download_completed = pyqtSignal(DownloadItem)
     download_error = pyqtSignal(DownloadItem, str)
-    
+
     def __init__(self):
         super().__init__()
         self.queue: List[DownloadItem] = load_download_queue()
         self.current_download: Optional[DownloadItem] = None
-        self.is_paused = False
-        
+
     def add_download(self, item: DownloadItem):
+        item.status = "pending"
+        item.pause_requested = False
+        item.cancel_requested = False
         self.queue.append(item)
         save_download_queue(self.queue)
         if not self.isRunning():
             self.start()
-            
+
     def pause_download(self):
-        self.is_paused = True
-        
+        if self.current_download:
+            self.current_download.pause_requested = True
+
     def resume_download(self):
-        self.is_paused = False
-        
+        if not self.isRunning() and self.queue:
+            self.start()
+
     def cancel_download(self, item_id: str):
         if self.current_download and self.current_download.id == item_id:
-            self.current_download.status = "cancelled"
-        self.queue = [item for item in self.queue if item.id != item_id]
+            self.current_download.cancel_requested = True
+            return
+
+        remaining: List[DownloadItem] = []
+        for item in self.queue:
+            if item.id == item_id:
+                if os.path.exists(item.output_path):
+                    try:
+                        os.remove(item.output_path)
+                    except OSError as err:
+                        logger.error(f"Erreur suppression fichier annulé: {err}")
+                continue
+            remaining.append(item)
+
+        self.queue = remaining
         save_download_queue(self.queue)
-        
+
     def run(self):
-        while self.queue and not self.is_paused:
-            self.current_download = self.queue.pop(0)
-            self.current_download.status = "downloading"
-            self.progress_updated.emit(self.current_download)
-            
+        while self.queue:
+            item = self.queue.pop(0)
+            self.current_download = item
+            item.status = "downloading"
+            item.pause_requested = False
+            item.cancel_requested = False
+            self.progress_updated.emit(item)
+
             try:
-                self.download_file(self.current_download)
-                self.current_download.status = "completed"
-                self.current_download.progress = 100.0
-                self.download_completed.emit(self.current_download)
+                result = self.download_file(item)
             except Exception as e:
-                self.current_download.status = "error"
-                self.download_error.emit(self.current_download, str(e))
-            
+                item.status = "error"
+                self.download_error.emit(item, str(e))
+                save_download_queue(self.queue)
+                self.current_download = None
+                continue
+
+            if result == "completed":
+                if item.file_size and item.downloaded < item.file_size:
+                    item.downloaded = item.file_size
+                item.progress = 100.0
+                item.status = "completed"
+                self.download_completed.emit(item)
+            elif result == "paused":
+                item.status = "paused"
+                self.queue.insert(0, item)
+                self.progress_updated.emit(item)
+                save_download_queue(self.queue)
+                self.current_download = None
+                return
+            elif result == "cancelled":
+                item.status = "cancelled"
+                item.progress = 0.0
+                item.downloaded = 0
+                item.file_size = 0
+                self.progress_updated.emit(item)
+
             save_download_queue(self.queue)
             self.current_download = None
-            
-    def download_file(self, item: DownloadItem):
-        response = requests.get(item.url, stream=True, timeout=30)
+
+    def download_file(self, item: DownloadItem) -> str:
+        headers: Dict[str, str] = {}
+        start_from = 0
+
+        if os.path.exists(item.output_path):
+            try:
+                start_from = os.path.getsize(item.output_path)
+            except OSError:
+                start_from = 0
+
+        if start_from:
+            item.downloaded = start_from
+            headers["Range"] = f"bytes={start_from}-"
+        else:
+            item.downloaded = 0
+            item.progress = 0.0
+
+        response = requests.get(item.url, stream=True, timeout=30, headers=headers)
         response.raise_for_status()
-        
-        total_size = int(response.headers.get('content-length', 0))
-        item.file_size = total_size
-        
-        os.makedirs(os.path.dirname(item.output_path), exist_ok=True)
-        
-        with open(item.output_path, 'wb') as file:
+
+        content_range = response.headers.get('content-range') or response.headers.get('Content-Range')
+        total_size = 0
+        length_value: Optional[int] = None
+        if content_range and '/' in content_range:
+            try:
+                total_size = int(content_range.split('/')[-1])
+            except ValueError:
+                total_size = 0
+        else:
+            length_header = response.headers.get('content-length')
+            if length_header:
+                try:
+                    length_value = int(length_header)
+                except ValueError:
+                    length_value = None
+                if length_value is not None:
+                    if start_from:
+                        total_size = start_from + length_value
+                    else:
+                        total_size = length_value
+
+        if total_size:
+            item.file_size = total_size
+        total_size = item.file_size
+        if total_size and item.downloaded:
+            item.progress = (item.downloaded / total_size) * 100
+
+        target_dir = os.path.dirname(item.output_path) or "."
+        os.makedirs(target_dir, exist_ok=True)
+
+        cancelled = False
+        paused = False
+
+        if start_from and response.status_code != 206:
+            if os.path.exists(item.output_path):
+                try:
+                    os.remove(item.output_path)
+                except OSError as err:
+                    logger.error(f"Erreur suppression fichier reprise: {err}")
+            start_from = 0
+            item.downloaded = 0
+            item.progress = 0.0
+            if length_value is not None:
+                item.file_size = length_value
+            total_size = item.file_size
+
+        mode = 'ab' if start_from else 'wb'
+
+        with open(item.output_path, mode) as file:
             for chunk in response.iter_content(chunk_size=8192):
-                if self.is_paused:
+                if item.cancel_requested:
+                    cancelled = True
+                    item.cancel_requested = False
                     break
-                    
-                if chunk:
-                    file.write(chunk)
-                    item.downloaded += len(chunk)
-                    if total_size > 0:
-                        item.progress = (item.downloaded / total_size) * 100
-                    self.progress_updated.emit(item)
-        
+
+                if item.pause_requested:
+                    paused = True
+                    break
+
+                if not chunk:
+                    continue
+
+                file.write(chunk)
+                item.downloaded += len(chunk)
+                if total_size > 0:
+                    item.progress = (item.downloaded / total_size) * 100
+                self.progress_updated.emit(item)
+
+        if not cancelled and item.cancel_requested:
+            cancelled = True
+            item.cancel_requested = False
+
+        if cancelled:
+            if os.path.exists(item.output_path):
+                try:
+                    os.remove(item.output_path)
+                except OSError as err:
+                    logger.error(f"Erreur suppression fichier annulé: {err}")
+            item.progress = 0.0
+            item.downloaded = 0
+            item.file_size = 0
+            return "cancelled"
+
+        if paused:
+            item.pause_requested = False
+            return "paused"
+
         if item.subtitle_url:
             self.download_subtitles(item)
+
+        return "completed"
 
     def download_subtitles(self, item: DownloadItem):
         try:
@@ -2002,34 +2132,71 @@ class DownloadDialog(QtWidgets.QDialog):
     def setup_connections(self):
         self.download_manager.progress_updated.connect(self.on_download_progress)
         self.download_manager.download_completed.connect(self.on_download_completed)
+        self.download_manager.download_error.connect(self.on_download_error)
         self.btnPause.clicked.connect(self.download_manager.pause_download)
         self.btnResume.clicked.connect(self.download_manager.resume_download)
         self.btnCancel.clicked.connect(self.cancel_selected)
         self.btnOpenFolder.clicked.connect(self.open_download_folder)
-        
+
     def update_list(self):
         self.download_list.clear()
-        for item in self.download_manager.queue:
-            status_icon = "⏳" if item.status == "pending" else "⬇️" if item.status == "downloading" else "✅" if item.status == "completed" else "❌"
-            list_item = QtWidgets.QListWidgetItem(f"{status_icon} {item.title} - {item.progress:.1f}%")
+        status_icons = {
+            "pending": "⏳",
+            "downloading": "⬇️",
+            "paused": "⏸",
+            "completed": "✅",
+            "cancelled": "🚫",
+            "error": "⚠️",
+        }
+        status_labels = {
+            "pending": "En attente",
+            "downloading": "Téléchargement",
+            "paused": "En pause",
+            "completed": "Terminé",
+            "cancelled": "Annulé",
+            "error": "Erreur",
+        }
+
+        items_to_display: List[DownloadItem] = []
+        if self.download_manager.current_download:
+            items_to_display.append(self.download_manager.current_download)
+        items_to_display.extend(self.download_manager.queue)
+
+        seen: Set[str] = set()
+        for item in items_to_display:
+            if item.id in seen:
+                continue
+            seen.add(item.id)
+            status_icon = status_icons.get(item.status, "ℹ️")
+            status_label = status_labels.get(item.status, item.status.capitalize() if item.status else "")
+            list_item = QtWidgets.QListWidgetItem(
+                f"{status_icon} {item.title} - {status_label} ({item.progress:.1f}%)"
+            )
             list_item.setData(QtCore.Qt.ItemDataRole.UserRole, item.id)
             self.download_list.addItem(list_item)
-            
+
     def on_download_progress(self, item: DownloadItem):
         self.update_list()
-        if item.status == "downloading":
+        if item.status in {"downloading", "paused"}:
             self.progress_bar.setValue(int(item.progress))
-            
+        elif item.status == "cancelled":
+            self.progress_bar.setValue(0)
+
     def on_download_completed(self, item: DownloadItem):
         self.update_list()
         self.progress_bar.setValue(0)
-        
+
+    def on_download_error(self, item: DownloadItem, message: str):
+        self.update_list()
+        self.progress_bar.setValue(0)
+
     def cancel_selected(self):
         current_item = self.download_list.currentItem()
         if current_item:
             item_id = current_item.data(QtCore.Qt.ItemDataRole.UserRole)
             self.download_manager.cancel_download(item_id)
             self.update_list()
+            self.progress_bar.setValue(0)
             
     def open_download_folder(self):
         download_path = load_settings().get("download_path", DOWNLOAD_DIR)

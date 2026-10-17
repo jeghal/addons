@@ -1,17 +1,120 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jeghal</title>
+    <title>Jeghal Kodi Add-ons</title>
+    <meta name="description" content="Téléchargements directs et dépôt personnel d'extensions Kodi.">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --text: #202124;
+            --meta: #5f6368;
+            --border: #dadce0;
+            --card-bg: #ffffff;
+            --btn-bg: #1769aa;
+            --btn-hover: #12558a;
+            --btn-text: #ffffff;
+            --link: #1769aa;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #121212;
+                --text: #e8eaed;
+                --meta: #9aa0a6;
+                --border: #3c4043;
+                --card-bg: #1e1e1e;
+                --btn-bg: #2563eb;
+                --btn-hover: #1d4ed8;
+                --btn-text: #ffffff;
+                --link: #8ab4f8;
+            }
+        }
+        body { 
+            max-width: 760px; 
+            margin: 40px auto; 
+            padding: 0 20px; 
+            font: 16px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: var(--bg);
+            color: var(--text); 
+        }
+        h1 { margin-bottom: 8px; }
+        .subtitle { color: var(--meta); margin-top: 0; }
+        .addon { 
+            background: var(--card-bg);
+            border: 1px solid var(--border); 
+            border-radius: 10px; 
+            margin: 16px 0; 
+            padding: 18px; 
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .addon:hover { 
+            border-color: var(--btn-bg); 
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        .addon h2 { margin: 0 0 6px; font-size: 20px; }
+        .meta { color: var(--meta); margin: 0 0 14px; font-size: 14px; }
+        .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+        .download { 
+            display: inline-block; 
+            padding: 8px 16px; 
+            border-radius: 6px; 
+            background: var(--btn-bg); 
+            color: var(--btn-text); 
+            text-decoration: none; 
+            font-weight: 500;
+            transition: background 0.2s ease;
+        }
+        .download:hover { background: var(--btn-hover); }
+        .secondary { 
+            color: var(--link); 
+            text-decoration: none; 
+            font-size: 14px;
+        }
+        .secondary:hover { text-decoration: underline; }
+        footer { 
+            margin-top: 32px; 
+            padding-top: 16px; 
+            border-top: 1px solid var(--border); 
+            color: var(--meta); 
+            font-size: 14px; 
+        }
+        footer a { color: var(--link); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+    </style>
 </head>
 <body>
-    <a href="plugin.video.xtream_codes_iptv.zip">plugin.video.xtream_codes_iptv.zip</a>
-    <br>
-    <a href="service.subtitles.myopensubtitles.zip">service.subtitles.myopensubtitles.zip</a>
-    <br>
-    <a href="repository.vstream-0.0.6.zip">repository.vstream-0.0.6.zip</a>
-    <br>
-    <a href="plugin.video.my.xtream.zip">plugin.video.my.xtream.zip</a>
+    <h1>Jeghal Kodi Add-ons</h1>
+    <p class="subtitle">Téléchargements directs pour installation manuelle dans Kodi.</p>
+
+    <section class="addon">
+        <h2>Codes IPTV</h2>
+        <p class="meta">Version 3.0.0 · 2.05 MiB · mise à jour le 17 octobre 2026</p>
+        <div class="actions">
+            <a class="download" href="plugin.video.my.xtream-3.0.0.zip">Télécharger Codes IPTV 3.0.0</a>
+            <a class="secondary" href="plugin.video.my.xtream.zip">Lien permanent</a>
+        </div>
+    </section>
+
+    <section class="addon">
+        <h2>Repository vStream</h2>
+        <p class="meta">Version 0.0.6 · 520 KiB</p>
+        <div class="actions">
+            <a class="download" href="repository.vstream-0.0.6.zip">Télécharger vStream Repository 0.0.6</a>
+        </div>
+    </section>
+
+    <section class="addon">
+        <h2>MyOpenSubtitles</h2>
+        <p class="meta">Version 1.2.0 · 11 KiB</p>
+        <div class="actions">
+            <a class="download" href="service.subtitles.myopensubtitles.zip">Télécharger MyOpenSubtitles 1.2.0</a>
+        </div>
+    </section>
+
+    <footer>
+        <a href="README.md">Instructions d'installation</a> ·
+        <a href="SHA256SUMS.txt">Empreintes SHA-256</a>
+    </footer>
 </body>
 </html>

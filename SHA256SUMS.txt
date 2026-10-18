@@ -1,4 +1,5 @@
+83f82d0041cee8c2e931ad4793708593f2d5dc02deddfb384dcc72858da5653c  plugin.video.my.xtream-3.0.1.zip
 b07a23c7d952f3202ff046e286f426bc9e862a479e2342d611f85ec49d331085  plugin.video.my.xtream-3.0.0.zip
-b07a23c7d952f3202ff046e286f426bc9e862a479e2342d611f85ec49d331085  plugin.video.my.xtream.zip
+83f82d0041cee8c2e931ad4793708593f2d5dc02deddfb384dcc72858da5653c  plugin.video.my.xtream.zip
 4339c88ccb5791b411e0be4a5947072c9dba109084e51fe40afc1a14f34cd7a6  repository.vstream-0.0.6.zip
 dbc967325434d905fc15bf79098fe16fa86eacb75249b0e329551cd027dd28a9  service.subtitles.myopensubtitles.zip

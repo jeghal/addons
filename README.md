@@ -6,8 +6,8 @@ Small download repository for personal Kodi add-ons and skins.
 
 | Add-on | Version | Download | SHA-256 |
 | --- | --- | --- | --- |
-| Codes IPTV (`plugin.video.my.xtream`) | 3.0.2 | [`plugin.video.my.xtream-3.0.2.zip`](plugin.video.my.xtream-3.0.2.zip) | `48ad7636...` |
-| Codes IPTV (permalink) | 3.0.2 | [`plugin.video.my.xtream.zip`](plugin.video.my.xtream.zip) | `48ad7636...` |
+| Codes IPTV (`plugin.video.my.xtream`) | 3.0.3 | [`plugin.video.my.xtream-3.0.3.zip`](plugin.video.my.xtream-3.0.3.zip) | `1efc68a1...` |
+| Codes IPTV (permalink) | 3.0.3 | [`plugin.video.my.xtream.zip`](plugin.video.my.xtream.zip) | `1efc68a1...` |
 | MySkin IPTV v26 Lite (`skin.myskin`) | 4.0.0 | [`MySkin_IPTV_v26_Lite.zip`](MySkin_IPTV_v26_Lite.zip) | `aff1f3e9...` |
 | MyCinema (`plugin.video.mycinema`) | 1.0.0 | [`plugin.video.mycinema.zip`](plugin.video.mycinema.zip) | `8d923683...` |
 | MyOpenSubtitles (`service.subtitles.myopensubtitles`) | 1.2.0 | [`service.subtitles.myopensubtitles.zip`](service.subtitles.myopensubtitles.zip) | `61f2c804...` |
@@ -49,9 +49,18 @@ SHA-256 hashes for every ZIP are published in [`SHA256SUMS.txt`](SHA256SUMS.txt)
 
 ## Current releases
 
+### Codes IPTV 3.0.3 — 2026-11-05
+
+- Ma sélection: public TMDb list with movies and series, loaded on demand.
+- French interface and stock Kodi icons for the main menu.
+- Improved IPTV matching for provider tags and localized subtitles (Ghosts 2021).
+- Original and French title matching, with cached TMDb names and deduplicated results.
+- Automated checks: 72 passed, 8 legacy comparisons skipped, no failures. User tested in Kodi.
+- Current versioned release and permalink target.
+
 ### Codes IPTV 3.0.2 — 2026-10-20
 
-- Current versioned release and permalink target.
+- Previous version retained for rollback.
 - Kodi add-on ID: `plugin.video.my.xtream`.
 
 ### MySkin IPTV v26 Lite 4.0.0 — 2026-10-22
